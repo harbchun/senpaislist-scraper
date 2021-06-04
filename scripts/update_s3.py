@@ -4,8 +4,7 @@ import time
 import os
 import pandas # csv
 import boto3 # AWS
- 
-from datetime import date
+
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -52,6 +51,8 @@ s3_images_contents = s3_images_object.get('Contents', [])
 def main():
     if not s3_data_contents:
         print('Data Bucket Is Empty')
+
+
     else:
         print('Data Bucket Is NOT Empty')
 
