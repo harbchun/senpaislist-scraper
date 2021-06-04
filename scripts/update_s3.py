@@ -5,6 +5,8 @@ import os
 import pandas # csv
 import boto3 # AWS
 
+from lib import times, s3utils, scrape
+
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -18,7 +20,10 @@ AWS_BUCKET_REGION = os.environ.get('AWS_BUCKET_REGION')
 
 # const variables
 SEASONS = ['spring', 'summer', 'fall', 'winter']
-START_YEAR = 2010
+MIN_YEAR = int(os.environ.get('MIN_YEAR'))
+MAX_YEAR = times.get_current_year()
+THE_FORBIDDEN_GENRE_1=os.environ.get('THE_FORBIDDEN_GENRE_1')
+THE_FORBIDDEN_GENRE_2=os.environ.get('THE_FORBIDDEN_GENRE_2')
 
 
 # Creating the low level functional client
@@ -49,12 +54,34 @@ s3_data_contents = s3_data_object.get('Contents', [])
 s3_images_contents = s3_images_object.get('Contents', [])
 
 def main():
-    if not s3_data_contents:
-        print('Data Bucket Is Empty')
+    for year in range(MIN_YEAR, MAX_YEAR):
+        for season in SEASONS:
+            s3_data_objects = s3_client.list_objects(
+                Bucket=AWS_DATA_BUCKET_NAME,
+                Delimiter='/',
+                MaxKeys=1,
+                Prefix=str(year)+'/'+season+'/'
+            )
+            s3_data_contents = s3_data_objects.get('Contents', [])
 
+            if not s3_data_contents:
+                print('Data Bucket Is Empty')
+                anime_ids = scrape.retrieve_anime_ids(year, season)
+                
+                for anime_id in anime_ids:
+                    anime_data = scrape.retrieve_anime_data(anime_id)
 
-    else:
-        print('Data Bucket Is NOT Empty')
+                    # Filter out the forbidden genres
+                    genres_dict_list = anime_data.get("genres", [])
+                    genres = [x.get("name", '') for x in genres_dict_list]
+                    if THE_FORBIDDEN_GENRE_1 in genres or THE_FORBIDDEN_GENRE_2 in genres:
+                        continue
+                    
+                    return
+
+            else:
+                print('Data Bucket Is NOT Empty')
+
 
 if __name__ == "__main__":
     main()
