@@ -5,5 +5,5 @@ def random_file_prefix(file_name):
     
     return random_file_name
 
-def random_file_name():
+def random_uuid():
     return str(uuid.uuid4())
