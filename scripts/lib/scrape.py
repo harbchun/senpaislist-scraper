@@ -19,6 +19,3 @@ def retrieve_anime_data(anime_id):
 
         return animeResponse.json()
         
-
-        # with open('../db/data/'+str(year)+str(season)+'/'+str(year)+'_'+str(season)+'_'+str(anime_id)+'.json', 'w') as outfile:
-        #     json.dump(animeJson, outfile)
