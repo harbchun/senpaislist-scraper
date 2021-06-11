@@ -1,11 +1,8 @@
-import requests 
 import json
-import time
 import os
-import pickle
-import urllib.request
+import requests
+import shutil
 
-import pandas # csv
 import boto3 # AWS
 from dotenv import load_dotenv
 
@@ -75,16 +72,33 @@ def main():
                     random_file_name = s3utils.random_uuid()
                     anime_data['file_id'] = random_file_name
 
-                    # !!! I HAVE DECIDED TO PUT THIS INTO A SEPRATE SCRIPT !!!
-                    # IMAGE
-                    # random_image_id = s3utils.random_uuid()
-                    # anime_data['image_id'] = random_image_id # save the image id to the JPG file
-                    # anime_image_url = anime_data['image_url']
-                    # urllib.request.urlretrieve(anime_image_url, DIR_JPG+random_file_name+FILE_EXTENSION_JPG) # save locally
-                    # s3_client.upload_file(DIR_JPG+random_file_name+FILE_EXTENSION_JPG, AWS_IMAGES_BUCKET_NAME, str(year)+'/'+season+'/'+random_file_name+FILE_EXTENSION_JPG)
-                    # # remove the jpg file once it is done uploaded
-                    # os.remove(DIR_JPG+random_file_name+FILE_EXTENSION_JPG)
 
+
+                    # IMAGE
+                    random_image_id = s3utils.random_uuid()
+                    anime_data['image_id'] = random_image_id # save the image id to the JPG file
+                    anime_image_url = anime_data.get('image_url', None)
+
+                    # save the image locally
+                    if anime_image_url:
+                        image_url_request = requests.get(anime_image_url, stream = True)
+
+                        if image_url_request.status_code == 200:
+                            # Set decode_content value to True, otherwise the downloaded image file's size will be zero.
+                            image_url_request.raw.decode_content = True
+                            # Open a local file with wb ( write binary ) permission.
+                            with open(DIR_JPG+random_image_id+FILE_EXTENSION_JPG,'wb') as anime_image:
+                                shutil.copyfileobj(image_url_request.raw, anime_image)
+                        else:
+                            print('Image Couldn\'t be retreived')
+                        # save to s3 bucket
+                        s3_client.upload_file(DIR_JPG+random_image_id+FILE_EXTENSION_JPG, AWS_IMAGES_BUCKET_NAME, str(year)+'/'+season+'/'+random_image_id+FILE_EXTENSION_JPG)
+                        # remove the jpg file once it is done uploaded  
+                        os.remove(DIR_JPG+random_image_id+FILE_EXTENSION_JPG)
+                    
+
+
+                    # DATA
                     # temporarily create the json file 
                     random_anime_id = s3utils.random_uuid()
                     anime_data['anime_id'] = random_anime_id
